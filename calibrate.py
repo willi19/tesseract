@@ -45,7 +45,7 @@ class ViewerWithCallback:
         vis = o3d.visualization.VisualizerWithKeyCallback()
         vis.register_key_callback(glfw_key_escape, self.escape_callback)
         vis.register_key_callback(glfw_key_space, self.space_callback)
-        vis.create_window(f'viewer', 2880, 540)
+        vis.create_window(f'viewer', 2048, 1536)
         print("Sensor initialized. Press [ESC] to exit.")
 
         vis_geometry_added = False
@@ -64,11 +64,17 @@ class ViewerWithCallback:
                     o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'depth{i}.png'), rgbd.depth)
                 
                 tot_img.append(cv2.resize(np.array(rgbd.color),(1024, 768) ))
+
+            if len(tot_img) < 4:
+                continue
+
             step+= 1
             print(step)
             if step%2 != 0:
                 continue
-            img = np.concatenate(tot_img, axis=1)
+            tmpimg1 = np.concatenate((tot_img[0],tot_img[1]), axis=1)
+            tmpimg2 = np.concatenate((tot_img[2],tot_img[3]), axis=1)
+            img = np.concatenate((tmpimg1,tmpimg2), axis=0)
             cv2.putText(img, str(step), (512,512),cv2.FONT_HERSHEY_SIMPLEX ,3, (255, 255, 0) )
             img = o3d.geometry.Image(img.astype(np.uint8))
             vis.clear_geometries()
