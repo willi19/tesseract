@@ -8,7 +8,7 @@ import numpy as np
                     
 # Python program to illustrate Python get current time
 import time
-
+import cv2
 
 class ViewerWithCallback:
 
@@ -42,33 +42,42 @@ class ViewerWithCallback:
     def run(self):
         glfw_key_escape = 256
         glfw_key_space = 32
-        vis = [o3d.visualization.VisualizerWithKeyCallback() for _ in range(4)]
-        for i, v in enumerate(vis):
-            v.register_key_callback(glfw_key_escape, self.escape_callback)
-            v.register_key_callback(glfw_key_space, self.space_callback)
-            v.create_window(f'viewer{i}', 1920, 540)
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.register_key_callback(glfw_key_escape, self.escape_callback)
+        vis.register_key_callback(glfw_key_space, self.space_callback)
+        vis.create_window(f'viewer', 2880, 540)
         print("Sensor initialized. Press [ESC] to exit.")
 
-        vis_geometry_added = [False for _ in range(4)]
-
+        vis_geometry_added = False
+        step = 0
         while not self.flag_exit:
+            tot_img = []
             for i in range(4):
                 rgbd = self.sensors[i].capture_frame(self.align_depth_to_color)
                 if rgbd is None:
-                    continue
-
-                if not vis_geometry_added[i]:
-                    vis[i].add_geometry(rgbd)
-                    vis_geometry_added[i] = True
-
-                vis[i].update_geometry(rgbd)
-                vis[i].poll_events()
-                vis[i].update_renderer()
+                    print(i)
+                    break
 
                 if self.capture_status[i] < self.capture_cnt:
                     self.capture_status[i] += 1
                     o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'color{i}.jpg'), rgbd.color)
                     o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'depth{i}.png'), rgbd.depth)
+                
+                tot_img.append(cv2.resize(np.array(rgbd.color),(1024, 768) ))
+            step+= 1
+            print(step)
+            if step%2 != 0:
+                continue
+            img = np.concatenate(tot_img, axis=1)
+            cv2.putText(img, str(step), (512,512),cv2.FONT_HERSHEY_SIMPLEX ,3, (255, 255, 0) )
+            img = o3d.geometry.Image(img.astype(np.uint8))
+            vis.clear_geometries()
+            vis.add_geometry(img)
+                #vis_geometry_added = True
+            vis.update_geometry(img)
+            vis.poll_events()
+            vis.update_renderer()
+
 
 
 if __name__ == '__main__':
