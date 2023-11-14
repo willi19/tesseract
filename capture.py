@@ -35,8 +35,9 @@ class ViewerWithCallback:
         return False
 
     def space_callback(self, vis):
-        self.capture_cnt += 10
-        os.makedirs(os.path.join(self.dirname, str(self.capture_cnt)), exist_ok=True)
+        for i in range(self.capture_cnt, self.capture_cnt+20):
+            os.makedirs(os.path.join(self.dirname, str(i)), exist_ok=True)
+        self.capture_cnt += 20
         return False
 
     def run(self):
@@ -59,9 +60,9 @@ class ViewerWithCallback:
                     break
 
                 if self.capture_status[i] < self.capture_cnt:
+                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_status[i]), f'color{i}.jpg'), rgbd.color)
+                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_status[i]), f'depth{i}.png'), rgbd.depth)
                     self.capture_status[i] += 1
-                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'color{i}.jpg'), rgbd.color)
-                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'depth{i}.png'), rgbd.depth)
                 
                 tot_img.append(cv2.resize(np.array(rgbd.color),(1024, 768) ))
 
