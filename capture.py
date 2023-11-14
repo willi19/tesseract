@@ -8,7 +8,7 @@ import numpy as np
                     
 # Python program to illustrate Python get current time
 import time
-
+import cv2
 
 class ViewerWithCallback:
 
@@ -35,50 +35,60 @@ class ViewerWithCallback:
         return False
 
     def space_callback(self, vis):
-        self.capture_cnt = 10000
-        for i in range(4):
-            os.makedirs(os.path.join(self.dirname, str(i)), exist_ok=True)
+        self.capture_cnt += 1
+        os.makedirs(os.path.join(self.dirname, str(self.capture_cnt)), exist_ok=True)
         return False
 
     def run(self):
         glfw_key_escape = 256
         glfw_key_space = 32
-        vis = [o3d.visualization.VisualizerWithKeyCallback() for _ in range(4)]
-        for i, v in enumerate(vis):
-            v.register_key_callback(glfw_key_escape, self.escape_callback)
-            v.register_key_callback(glfw_key_space, self.space_callback)
-            v.create_window(f'viewer{i}', 1920, 540)
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.register_key_callback(glfw_key_escape, self.escape_callback)
+        vis.register_key_callback(glfw_key_space, self.space_callback)
+        vis.create_window(f'viewer', 2048, 1536)
         print("Sensor initialized. Press [ESC] to exit.")
 
-        vis_geometry_added = [False for _ in range(4)]
-
+        vis_geometry_added = False
+        step = 0
         while not self.flag_exit:
+            tot_img = []
             for i in range(4):
                 rgbd = self.sensors[i].capture_frame(self.align_depth_to_color)
                 if rgbd is None:
-                    continue
-
-                if not vis_geometry_added[i]:
-                    vis[i].add_geometry(rgbd)
-                    vis_geometry_added[i] = True
-
-                vis[i].update_geometry(rgbd)
-                vis[i].poll_events()
-                vis[i].update_renderer()
+                    print(i)
+                    break
 
                 if self.capture_status[i] < self.capture_cnt:
                     self.capture_status[i] += 1
-                    t = time.localtime()
+                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'color{i}.jpg'), rgbd.color)
+                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'depth{i}.png'), rgbd.depth)
+                
+                tot_img.append(cv2.resize(np.array(rgbd.color),(1024, 768) ))
 
-                    current_time = time.strftime("%H%M%S", t)
-                    print(current_time)
-                    o3d.io.write_image(os.path.join(self.dirname, str(i), f'color_{current_time}.jpg'), rgbd.color)
-                    o3d.io.write_image(os.path.join(self.dirname, str(i), f'depth_{current_time}.png'), rgbd.depth)
+            if len(tot_img) < 4:
+                continue
+
+            step+= 1
+            print(step)
+            if step%2 != 0:
+                continue
+            tmpimg1 = np.concatenate((tot_img[0],tot_img[1]), axis=1)
+            tmpimg2 = np.concatenate((tot_img[2],tot_img[3]), axis=1)
+            img = np.concatenate((tmpimg1,tmpimg2), axis=0)
+            cv2.putText(img, str(step), (512,512),cv2.FONT_HERSHEY_SIMPLEX ,3, (255, 255, 0) )
+            img = o3d.geometry.Image(img.astype(np.uint8))
+            vis.clear_geometries()
+            vis.add_geometry(img)
+                #vis_geometry_added = True
+            vis.update_geometry(img)
+            vis.poll_events()
+            vis.update_renderer()
+
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')
-    parser.add_argument('--config', type=str, default='capture_config.json', help='input json kinect config')
+    parser.add_argument('--config', type=str, help='input json kinect config')
     parser.add_argument('--list',
                         action='store_true',
                         help='list available azure kinect sensors')
@@ -99,7 +109,7 @@ if __name__ == '__main__':
     if args.config is not None:
         config = o3d.io.read_azure_kinect_sensor_config(args.config)
     else:
-        config = o3d.io.AzureKinectSensorConfig()
+        config = o3d.io.read_azure_kinect_sensor_config('capture_config.json')#o3d.io.AzureKinectSensorConfig()
 
     device = args.device
     if device < 0 or device > 255:
