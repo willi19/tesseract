@@ -35,7 +35,7 @@ class ViewerWithCallback:
         return False
 
     def space_callback(self, vis):
-        self.capture_cnt += 1
+        self.capture_cnt += 10
         os.makedirs(os.path.join(self.dirname, str(self.capture_cnt)), exist_ok=True)
         return False
 
