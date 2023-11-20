@@ -35,9 +35,9 @@ class ViewerWithCallback:
         return False
 
     def space_callback(self, vis):
-        for i in range(self.capture_cnt, self.capture_cnt+20):
+        for i in range(self.capture_cnt, self.capture_cnt+100):
             os.makedirs(os.path.join(self.dirname, str(i)), exist_ok=True)
-        self.capture_cnt += 20
+        self.capture_cnt += 100
         return False
 
     def run(self):
@@ -97,8 +97,8 @@ if __name__ == '__main__':
                         type=int,
                         default=0,
                         help='input kinect device id')
-    parser.add_argument('-a',
-                        '--align_depth_to_color',
+    parser.add_argument('--no_align',
+                        '--no_align_depth_to_color',
                         action='store_true',
                         help='enable align depth image to color')
     args = parser.parse_args()
@@ -116,6 +116,8 @@ if __name__ == '__main__':
     if device < 0 or device > 255:
         print('Unsupported device id, fall back to 0')
         device = 0
-
-    v = ViewerWithCallback(config, device, args.align_depth_to_color)
+    align_depth_to_color = True
+    if args.align_depth_to_color:
+        align_depth_to_color = False
+    v = ViewerWithCallback(config, device, align_depth_to_color)
     v.run()
