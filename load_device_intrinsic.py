@@ -4,6 +4,9 @@ import json
 import numpy as np
 import cv2
 import os
+from src import utils
+import time
+import shutil
 
 def get_depth_config(depth_config):
     if depth_config == 'K4A_DEPTH_MODE_OFF':
@@ -40,32 +43,37 @@ if not cnt:
     print("No devices available")
     exit()
 
-config_mode = ['calib', 'capture']
-config = {}
 
-for mode in config_mode:
-    config_file = open(f'{mode}_config.json')
-    data = json.load(config_file)
-    color_config = get_color_config(data['color_resolution'])
-    depth_config = get_depth_config(data['depth_mode'])
-    config[mode] = (Config(color_resolution = color_config, depth_mode = depth_config, camera_fps = 0))
-    
+config_path = 'config/pyk4a.json'
+config_file = open(config_path, 'r')
+data = json.load(config_file)
+config = Config(**data)
+
 print(f"Available devices: {cnt}")
-os.makedirs('intrinsic',exist_ok=True)
 
+t = time.localtime()
+current_time = time.strftime("%m%d%H%M%S", t)
 
-for mode in config_mode:
-    for device_id in range(cnt):
-        device = PyK4A(config = config[mode], device_id=device_id)
-        device.start()
+save_path = os.path.join('data','intrinsic_kinect',current_time)
+os.makedirs(save_path,exist_ok=True)
+shutil.copyfile(config_path, os.path.join(save_path, 'config.json'))
+
+for device_id in range(cnt):
+    device = PyK4A(config = config, device_id=device_id)
+    device.start()
+
+    print(f"{device_id}: {device.serial}")
+    os.makedirs(os.path.join(save_path, 'json'), exist_ok=True)
+    os.makedirs(os.path.join(save_path, 'view'), exist_ok=True)
+
+    device.save_calibration_json(os.path.join(save_path, 'json', f'{device.serial}.json'))
     
-        print(f"{device_id}: {device.serial}")
-        os.makedirs(os.path.join('intrinsic', str(device_id)), exist_ok=True)
-
-        device.save_calibration_json(os.path.join('intrinsic', str(device_id), f'{mode}.json'))
-        while 1:
-            capture = device.get_capture()
-            if np.any(capture.color):
-                cv2.imwrite(os.path.join('intrinsic', str(device_id), "view.png"), capture.color[:, :, :3])
-                break
-        device.stop()
+    while 1:
+        capture = device.get_capture()
+        if capture.color is None:
+            continue
+        img = utils.convert_to_bgra_if_required(config.color_format, capture.color)
+        if np.any(capture.color):
+            cv2.imwrite(os.path.join(save_path, "view", f'{device.serial}.png'), img)
+            break
+    device.stop()

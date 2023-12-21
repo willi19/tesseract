@@ -5,27 +5,26 @@ import os
 
 import numpy as np
 
-                    
-# Python program to illustrate Python get current time
 import time
 import cv2
 
 class ViewerWithCallback:
 
-    def __init__(self, config, device, align_depth_to_color):
+    def __init__(self, mode, name=None, device=None):
         self.flag_exit = False
-        self.align_depth_to_color = align_depth_to_color
-
         self.sensors = [o3d.io.AzureKinectSensor(config) for _ in range(4)]
+        
         for i, sensor in enumerate(self.sensors):
             if not sensor.connect(i):
                 raise RuntimeError('Failed to connect to sensor')
+                
         self.capture_cnt = 0
         self.capture_status = [0 for _ in range(4)]
 
         t = time.localtime()
 
-        current_time = time.strftime("%H%M%S", t)
+        current_time = time.strftime("%m_%d_%H%M%S", t)
+
         self.dirname = current_time
         os.makedirs(self.dirname, exist_ok=True)
                         
@@ -53,7 +52,7 @@ class ViewerWithCallback:
         while not self.flag_exit:
             tot_img = []
             for i in range(4):
-                rgbd = self.sensors[i].capture_frame(self.align_depth_to_color)
+                rgbd = self.sensors[i].capture_frame(True)#self.align_depth_to_color)
                 if rgbd is None:
                     print(i)
                     break
@@ -83,38 +82,3 @@ class ViewerWithCallback:
             vis.update_geometry(img)
             vis.poll_events()
             vis.update_renderer()
-
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')
-    parser.add_argument('--config', type=str, help='input json kinect config')
-    parser.add_argument('--list',
-                        action='store_true',
-                        help='list available azure kinect sensors')
-    parser.add_argument('--device',
-                        type=int,
-                        default=0,
-                        help='input kinect device id')
-    parser.add_argument('-a',
-                        '--align_depth_to_color',
-                        action='store_true',
-                        help='enable align depth image to color')
-    args = parser.parse_args()
-
-    if args.list:
-        o3d.io.AzureKinectSensor.list_devices()
-        exit()
-
-    if args.config is not None:
-        config = o3d.io.read_azure_kinect_sensor_config(args.config)
-    else:
-        config = o3d.io.read_azure_kinect_sensor_config('calib_config.json')#o3d.io.AzureKinectSensorConfig()
-
-    device = args.device
-    if device < 0 or device > 255:
-        print('Unsupported device id, fall back to 0')
-        device = 0
-
-    v = ViewerWithCallback(config, device, args.align_depth_to_color)
-    v.run()
