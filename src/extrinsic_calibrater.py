@@ -10,6 +10,7 @@ import asyncio
 import json
 import shutil
 from aiohttp import FormData
+import argparse
 
 class ExtrinsicCalibrater:
     def set_config(self, config_path):
@@ -18,7 +19,7 @@ class ExtrinsicCalibrater:
         self.config = Config(**data)
 
     
-    def __init__(self, mode, name):
+    def __init__(self, name):
         self.flag_exit = False
 
         config_path = 'config/pyk4a.json'
@@ -43,7 +44,9 @@ class ExtrinsicCalibrater:
         shutil.copyfile(config_path, os.path.join(self.dirname, 'config.json'))
         os.makedirs(self.dirname, exist_ok=True)
         
-        self.input_thread = threading.Thread(target=self.run)                        
+        self.input_thread = threading.Thread(target=self.run)   
+        self.input_thread.input_thread.start()
+                         
 
     def thread_input(self):
         while not self.flag_exit:
@@ -56,6 +59,7 @@ class ExtrinsicCalibrater:
     def close(self):
         for device in self.devices:
             device.stop()
+        self.input_thread.join()
         print("close device")
         return False
 
@@ -106,4 +110,11 @@ class ExtrinsicCalibrater:
         finally:        
             self.close()
             loop.close()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')
+    parser.add_argument('--name', type=str, help='calibration setting name')
+    args = parser.parse_args()
     
+    calibrater = ExtrinsicCalibrater(args.name)
+    calibrater.run()
