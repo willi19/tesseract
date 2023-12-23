@@ -11,6 +11,7 @@ import json
 import shutil
 from aiohttp import FormData
 import argparse
+from utils import convert_to_bgra_if_required
 
 class ExtrinsicCalibrater:
     def set_config(self, config_path):
@@ -40,11 +41,11 @@ class ExtrinsicCalibrater:
 
         self.dirname = os.path.join('data','extrinsic',self.name)
 
-        shutil.copyfile(config_path, os.path.join(self.dirname, 'config.json'))
         os.makedirs(self.dirname, exist_ok=True)
+        shutil.copyfile(config_path, os.path.join(self.dirname, 'config.json'))
         
-        self.input_thread = threading.Thread(target=self.run)   
-        self.input_thread.input_thread.start()
+        self.input_thread = threading.Thread(target=self.thread_input)   
+        self.input_thread.start()
                          
 
     def thread_input(self):
@@ -63,7 +64,7 @@ class ExtrinsicCalibrater:
         return False
 
     def increase_capture_cnt(self):
-        os.makedirs(os.path.join(self.dirname, str(self.capture_cnt)), exist_ok=True)
+        os.makedirs(os.path.join(self.dirname, "scene"+str(self.capture_cnt)), exist_ok=True)
         self.capture_cnt += 1
         print("capture_cnt: ", self.capture_cnt)
         return
@@ -82,33 +83,35 @@ class ExtrinsicCalibrater:
             await asyncio.gather(*tasks)
             
     async def async_capture(self, index):
-        capture = await self.devices.get_capture()
+        capture = self.devices[index].get_capture()
         if capture.color is None:
             return None
+        img = convert_to_bgra_if_required(self.config.color_format, capture.color)
         id = self.ids[index]
-        return cv2.cvtColor(capture.color, cv2.COLOR_RGBA2RGB), id
+        return id, img
     
     async def get_all_captures(self):
-        return await asyncio.gather(*(self.async_capture(i) for i in range(4)))
+        return await asyncio.gather(*(self.async_capture(index) for index in range(4)))
 
     async def process_loop(self):
-        while self.flag_exit:
+        while not self.flag_exit:
             img_list = await self.get_all_captures()
             if img_list:
                 await self.send_all_images(img_list)
                 # Optionally save images locally
                 if self.capture_status < self.capture_cnt:
-                    for id, img in id, img_list:
-                        cv2.imwrite(f'data/calib/scene{self.capture_status}/{id}.png', img)
+                    for id, img in img_list:
+                        if img is not None:
+                            cv2.imwrite(f'{self.dirname}/scene{self.capture_status}/{id}.png', img)
                     self.capture_status += 1
                     
     def run(self):
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(self.process_loop())
-        finally:        
-            self.close()
+        finally:
             loop.close()
+            self.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')

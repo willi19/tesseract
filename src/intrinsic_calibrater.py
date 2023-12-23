@@ -10,7 +10,7 @@ import cv2
 import json
 import shutil
 from pyk4a import PyK4A, connected_device_count, Config
-from .utils import convert_to_bgra_if_required
+from utils import convert_to_bgra_if_required
 
 class IntrinsicCalibrater:
     def set_config(self, config_path):
@@ -87,3 +87,7 @@ class IntrinsicCalibrater:
             vis.update_geometry(img)
             vis.poll_events()
             vis.update_renderer()
+
+if __name__ == "__main__":
+    calibrater = IntrinsicCalibrater(0)
+    calibrater.run()
