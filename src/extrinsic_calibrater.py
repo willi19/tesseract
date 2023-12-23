@@ -26,8 +26,8 @@ class ExtrinsicCalibrater:
         self.set_config(config_path)
 
         self.devices = [PyK4A(config = self.config, device_id=device_ind) for device_ind in range(4)]
-        for device in self.devices:
-            device.start()
+        for i in range(4):
+            self.devices[i].start()
         self.ids = [device.serial for device in self.devices]
         
         for device in self.devices:
