@@ -5,7 +5,6 @@ import numpy as np
 import time
 import cv2
 from pyk4a import PyK4A, connected_device_count, Config
-from .utils import convert_to_bgra_if_required
 import threading
 import asyncio
 import json
