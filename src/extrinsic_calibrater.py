@@ -30,9 +30,6 @@ class ExtrinsicCalibrater:
             self.devices[i].start()
         self.ids = [device.serial for device in self.devices]
         
-        for device in self.devices:
-            device.start()
-
         self.capture_cnt = 0
         self.capture_status = 0
 
