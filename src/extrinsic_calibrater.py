@@ -48,6 +48,7 @@ class ExtrinsicCalibrater:
         self.input_thread = threading.Thread(target=self.thread_input)   
         self.input_thread.start()
                          
+        self.session = aiohttp.ClientSession()
 
     def thread_input(self):
         while not self.flag_exit:
@@ -71,24 +72,28 @@ class ExtrinsicCalibrater:
         return
     
     async def send_image_to_server(self, image, url, session, device_id):
+        if image is None:
+            return
         data = FormData()
         data.add_field('device_id', str(device_id))
-        data.add_field('image', image, filename=f'{device_id}.png', content_type='image/png')
+        success, encoded_image = cv2.imencode('.jpg', image)
+        image_bytes = encoded_image.tobytes()
+
+        data.add_field('image', image_bytes, filename=f'{device_id}.png', content_type='image/png')
         async with session.post(url, data=data) as response:
             return await response.text()
         
     
     async def send_all_images(self, img_list):
-        async with aiohttp.ClientSession() as session:
-            tasks = [asyncio.create_task(self.send_image_to_server(img, 'http://192.168.0.34/upload', session, id)) for id, img in img_list]
-            await asyncio.gather(*tasks)
+        tasks = [asyncio.create_task(self.send_image_to_server(img, 'http://192.168.0.34:5000/upload', self.session, id)) for id, img in img_list]
+        await asyncio.gather(*tasks)
             
     async def async_capture(self, index):
+        id = self.ids[index]
         capture = self.devices[index].get_capture()
         if capture.color is None:
-            return None
+            return id, None
         img = convert_to_bgra_if_required(self.config.color_format, capture.color)
-        id = self.ids[index]
         return id, img
     
     async def get_all_captures(self):
@@ -97,7 +102,7 @@ class ExtrinsicCalibrater:
     async def process_loop(self):
         while not self.flag_exit:
             img_list = await self.get_all_captures()
-            if img_list:
+            if img_list is not None:
                 await self.send_all_images(img_list)
                 # Optionally save images locally
                 if self.capture_status < self.capture_cnt:
