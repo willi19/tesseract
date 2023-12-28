@@ -1,84 +1,129 @@
-import open3d as o3d
-
-import argparse
 import os
 
 import numpy as np
 
 import time
 import cv2
+from pyk4a import PyK4A, connected_device_count, Config
+import threading
+import asyncio
+import json
+import shutil
+from aiohttp import FormData
+import aiohttp
+import argparse
+from utils import convert_to_bgra_if_required
 
-class ViewerWithCallback:
+class ExtrinsicCalibrater:
+    def set_config(self, config_path):
+        config_file = open(config_path, 'r')
+        data = json.load(config_file)
+        self.config = Config(**data)
 
-    def __init__(self, mode, name=None, device=None):
+    
+    def __init__(self, name):
         self.flag_exit = False
-        self.sensors = [o3d.io.AzureKinectSensor(config) for _ in range(4)]
+
+        config_path = 'config/pyk4a.json'
+        self.set_config(config_path)
+
+        self.devices = [PyK4A(config = self.config, device_id=device_ind) for device_ind in range(4)]
+        for i in range(4):
+            self.devices[i].start()
+        self.ids = [device.serial for device in self.devices]
         
-        for i, sensor in enumerate(self.sensors):
-            if not sensor.connect(i):
-                raise RuntimeError('Failed to connect to sensor')
-                
         self.capture_cnt = 0
-        self.capture_status = [0 for _ in range(4)]
+        self.capture_status = 0
 
-        t = time.localtime()
+        #t = time.localtime()
+        #current_time = time.strftime("%m%d%H%M%S", t)
 
-        current_time = time.strftime("%m_%d_%H%M%S", t)
+        self.name = name
 
-        self.dirname = current_time
+        self.dirname = os.path.join('data','extrinsic',self.name)
+
         os.makedirs(self.dirname, exist_ok=True)
-                        
+        shutil.copyfile(config_path, os.path.join(self.dirname, 'config.json'))
+        
+        self.input_thread = threading.Thread(target=self.thread_input)   
+        self.input_thread.start()
+                         
+        self.session = aiohttp.ClientSession()
 
-    def escape_callback(self, vis):
-        self.flag_exit = True
-        return False
-
-    def space_callback(self, vis):
-        self.capture_cnt += 1
-        os.makedirs(os.path.join(self.dirname, str(self.capture_cnt)), exist_ok=True)
-        return False
-
-    def run(self):
-        glfw_key_escape = 256
-        glfw_key_space = 32
-        vis = o3d.visualization.VisualizerWithKeyCallback()
-        vis.register_key_callback(glfw_key_escape, self.escape_callback)
-        vis.register_key_callback(glfw_key_space, self.space_callback)
-        vis.create_window(f'viewer', 2048, 1536)
-        print("Sensor initialized. Press [ESC] to exit.")
-
-        vis_geometry_added = False
-        step = 0
+    def thread_input(self):
         while not self.flag_exit:
-            tot_img = []
-            for i in range(4):
-                rgbd = self.sensors[i].capture_frame(True)#self.align_depth_to_color)
-                if rgbd is None:
-                    print(i)
-                    break
+            key = input()
+            if key == 'capture':
+                self.increase_capture_cnt()
+            elif key == 'exit':
+                self.flag_exit = True
+    
+    def close(self):
+        for device in self.devices:
+            device.stop()
+        self.input_thread.join()
+        print("close device")
+        return False
 
-                if self.capture_status[i] < self.capture_cnt:
-                    self.capture_status[i] += 1
-                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'color{i}.jpg'), rgbd.color)
-                    o3d.io.write_image(os.path.join(self.dirname, str(self.capture_cnt), f'depth{i}.png'), rgbd.depth)
-                
-                tot_img.append(cv2.resize(np.array(rgbd.color),(1024, 768) ))
+    def increase_capture_cnt(self):
+        os.makedirs(os.path.join(self.dirname, "scene"+str(self.capture_cnt)), exist_ok=True)
+        self.capture_cnt += 1
+        print("capture_cnt: ", self.capture_cnt)
+        return
+    
+    async def send_image_to_server(self, image, url, session, device_id):
+        if image is None:
+            return
+        data = FormData()
+        data.add_field('device_id', str(device_id))
+        image = cv2.resize(image, (image.shape[1]//4, image.shape[0]//4))
+        success, encoded_image = cv2.imencode('.jpg', image)
+        image_bytes = encoded_image.tobytes()
 
-            if len(tot_img) < 4:
-                continue
+        data.add_field('image', image_bytes, filename=f'{device_id}.png', content_type='image/png')
+        async with session.post(url, data=data) as response:
+            return await response.text()
+        
+    
+    async def send_all_images(self, img_list):
+        tasks = [asyncio.create_task(self.send_image_to_server(img, 'http://192.168.0.34:5000/upload', self.session, id)) for id, img in img_list]
+        await asyncio.gather(*tasks)
+            
+    async def async_capture(self, index):
+        id = self.ids[index]
+        capture = self.devices[index].get_capture()
+        if capture.color is None:
+            return id, None
+        img = convert_to_bgra_if_required(self.config.color_format, capture.color)
+        return id, img
+    
+    async def get_all_captures(self):
+        return await asyncio.gather(*(self.async_capture(index) for index in range(4)))
 
-            step+= 1
-            print(step)
-            if step%2 != 0:
-                continue
-            tmpimg1 = np.concatenate((tot_img[0],tot_img[1]), axis=1)
-            tmpimg2 = np.concatenate((tot_img[2],tot_img[3]), axis=1)
-            img = np.concatenate((tmpimg1,tmpimg2), axis=0)
-            cv2.putText(img, str(step), (512,512),cv2.FONT_HERSHEY_SIMPLEX ,3, (255, 255, 0) )
-            img = o3d.geometry.Image(img.astype(np.uint8))
-            vis.clear_geometries()
-            vis.add_geometry(img)
-                #vis_geometry_added = True
-            vis.update_geometry(img)
-            vis.poll_events()
-            vis.update_renderer()
+    async def process_loop(self):
+        while not self.flag_exit:
+            img_list = await self.get_all_captures()
+            if img_list is not None:
+                await self.send_all_images(img_list)
+                # Optionally save images locally
+                if self.capture_status < self.capture_cnt:
+                    for id, img in img_list:
+                        if img is not None:
+                            cv2.imwrite(f'{self.dirname}/scene{self.capture_status}/{id}.png', img)
+                    self.capture_status += 1
+                    
+    def run(self):
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(self.process_loop())
+        finally:
+            loop.close()
+            self.close()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')
+    parser.add_argument('--name', type=str, help='calibration setting name')
+    args = parser.parse_args()
+    
+    calibrater = ExtrinsicCalibrater(args.name)
+    calibrater.run()
