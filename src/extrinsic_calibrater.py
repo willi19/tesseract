@@ -76,6 +76,7 @@ class ExtrinsicCalibrater:
             return
         data = FormData()
         data.add_field('device_id', str(device_id))
+        image = cv2.resize(image, (image.shape[1]//4, image.shape[0]//4))
         success, encoded_image = cv2.imencode('.jpg', image)
         image_bytes = encoded_image.tobytes()
 

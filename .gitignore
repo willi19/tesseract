@@ -1,3 +1,5 @@
 data/*
 *.jpg
 *.png
+
+*.pyc
