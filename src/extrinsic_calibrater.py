@@ -18,17 +18,19 @@ class ExtrinsicCalibrater:
     def set_config(self, config_path):
         config_file = open(config_path, 'r')
         data = json.load(config_file)
-        self.config = Config(**data)
-
+        return Config(**data)
     
     def __init__(self, name):
         self.flag_exit = False
+        subordinate_config = self.set_config('config/pyk4a_subordinate.json')
+        master_config = self.set_config('config/pyk4a_master.json')
+        
+        self.device_num = connected_device_count()
+        configs = [subordinate_config] * self.device_num  # Assuming 4 devices for example
+        configs[-1] = master_config
 
-        config_path = 'config/pyk4a.json'
-        self.set_config(config_path)
-
-        self.devices = [PyK4A(config = self.config, device_id=device_ind) for device_ind in range(4)]
-        for i in range(4):
+        self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
+        for i in range(self.device_num):
             self.devices[i].start()
         self.ids = [device.serial for device in self.devices]
         
@@ -43,7 +45,7 @@ class ExtrinsicCalibrater:
         self.dirname = os.path.join('data','extrinsic',self.name)
 
         os.makedirs(self.dirname, exist_ok=True)
-        shutil.copyfile(config_path, os.path.join(self.dirname, 'config.json'))
+        shutil.copyfile(subordinate_config, os.path.join(self.dirname, 'config.json'))
         
         self.input_thread = threading.Thread(target=self.thread_input)   
         self.input_thread.start()
@@ -98,7 +100,7 @@ class ExtrinsicCalibrater:
         return id, img
     
     async def get_all_captures(self):
-        return await asyncio.gather(*(self.async_capture(index) for index in range(4)))
+        return await asyncio.gather(*(self.async_capture(index) for index in range(self.device_num)))
 
     async def process_loop(self):
         while not self.flag_exit:
