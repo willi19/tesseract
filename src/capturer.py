@@ -8,6 +8,7 @@ from utils import convert_to_bgra_if_required
 import threading
 import asyncio
 import shutil
+import time
 
 class ViewerWithCallback:
     def set_config(self, config_path):
@@ -24,6 +25,7 @@ class ViewerWithCallback:
         self.config = self.set_config('config/pyk4a.json')
 
         configs = [subordinate_config] * 4  # Assuming 4 devices for example
+        configs[-1] = master_config
         self.device_num = connected_device_count()
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
 
@@ -38,20 +40,24 @@ class ViewerWithCallback:
         self.input_thread = threading.Thread(target=self.thread_input)
         self.input_thread.start()
 
+        self.capture_start = False
+
     def thread_input(self):
         while not self.flag_exit:
             key = input()
             if key == 'exit':
                 self.flag_exit = True
+            if key == 'start':
+                self.capture_start = True
 
     def capture_and_process(self, device):
+        os.makedirs(f'sync/{device.serial}', exist_ok=True)
         while not self.flag_exit:
             capture = device.get_capture()
-            if capture.color is not None:
+            if capture.color is not None and self.capture_start:
                 img = convert_to_bgra_if_required(self.config.color_format, capture.color)
                 # Process and save the image
-                cv2.imwrite(f'sync/{device.serial}.jpg', img)
-            time.sleep(0.1)  # Adjust as needed
+                cv2.imwrite(f'sync/{device.serial}/{capture.color_timestamp_usec // 10 ** 3}.jpg', img)
 
     def close(self):
         for device in self.devices:

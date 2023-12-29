@@ -1,7 +1,7 @@
 data/*
 *.jpg
 *.png
-
+data_share/*
 *.pyc
 */*.pyc
 */*/*.pyc
