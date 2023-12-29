@@ -25,14 +25,16 @@ class ViewerWithCallback:
         self.config = self.set_config('config/pyk4a.json')
 
         configs = [subordinate_config] * 4  # Assuming 4 devices for example
-        #configs[-1] = master_config
+        configs[-1] = master_config
         self.device_num = connected_device_count()
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
+        self.capture_start = False
 
         # Start devices and create a thread for each device
         self.device_threads = []
         for device in self.devices:
             device.start()
+            print(f"Starting device {device.serial} {device.sync_jack_status}")
             thread = threading.Thread(target=self.capture_and_process, args=(device,))
             self.device_threads.append(thread)
 
@@ -41,7 +43,6 @@ class ViewerWithCallback:
         self.input_thread = threading.Thread(target=self.thread_input)
         self.input_thread.start()
 
-        self.capture_start = False
 
     def thread_input(self):
         while not self.flag_exit:
@@ -78,5 +79,6 @@ class ViewerWithCallback:
             self.close()
 
 if __name__ == "__main__":
+    shutil.rmtree('sync', ignore_errors=True)
     viewer = ViewerWithCallback()
     viewer.run()

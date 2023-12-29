@@ -27,7 +27,7 @@ class ViewerWithCallback:
         self.devices = [PyK4A(config = self.config, device_id=device_ind) for device_ind in range(self.device_num)]
         for i in range(self.device_num):
             self.devices[i].start()
-                        
+            print(f"{self.devices[i].sync_jack_status}")
 
     def escape_callback(self, vis):
         self.flag_exit = True
