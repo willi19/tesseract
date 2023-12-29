@@ -5,3 +5,4 @@ data/*
 *.pyc
 */*.pyc
 */*/*.pyc
+src/__pycache__/utils.cpython-39.pyc
