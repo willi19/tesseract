@@ -9,6 +9,7 @@ import threading
 import asyncio
 import shutil
 import time
+import queue
 
 class ViewerWithCallback:
     def set_config(self, config_path):
@@ -29,7 +30,7 @@ class ViewerWithCallback:
         self.device_num = connected_device_count()
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
         self.capture_start = False
-
+        self.capture_queue = queue.Queue()
         # Start devices and create a thread for each device
         self.device_threads = []
         for device in self.devices:
@@ -40,9 +41,12 @@ class ViewerWithCallback:
 
         for thread in self.device_threads:
             thread.start()
+        
         self.input_thread = threading.Thread(target=self.thread_input)
         self.input_thread.start()
 
+        self.process_thread = threading.Thread(target=self.thread_process)
+        self.process_thread.start()
 
     def thread_input(self):
         while not self.flag_exit:
@@ -52,14 +56,21 @@ class ViewerWithCallback:
             if key == 'start':
                 self.capture_start = True
 
-    def capture_and_process(self, device):
+    def thread_capture(self, device):
         os.makedirs(f'sync/{device.serial}', exist_ok=True)
         while not self.flag_exit:
             capture = device.get_capture()
-            if capture.color is not None and self.capture_start:
-                img = convert_to_bgra_if_required(self.config.color_format, capture.color)
-                # Process and save the image
-                cv2.imwrite(f'sync/{device.serial}/{capture.color_timestamp_usec // 10 ** 3}.jpg', img)
+            if self.capture_start:
+                self.capture_queue.put((device.serial, capture))
+    
+    def thread_process(self):
+        while not self.flag_exit:
+            if not self.capture_queue.empty():
+                serial, capture = self.capture_queue.get()
+                if capture.color is not None:
+                    img = convert_to_bgra_if_required(self.config.color_format, capture.color)
+                    # Process and save the image
+                    cv2.imwrite(f'sync/{serial}/{capture.color_timestamp_usec // 10 ** 3}.jpg', img)
 
     def close(self):
         for device in self.devices:
@@ -67,6 +78,7 @@ class ViewerWithCallback:
         for thread in self.device_threads:
             thread.join()
         self.input_thread.join()
+        self.process_thread.join()
         print("All devices closed")
 
     def run(self):
