@@ -25,7 +25,7 @@ class ViewerWithCallback:
         self.config = self.set_config('config/pyk4a.json')
 
         configs = [subordinate_config] * 4  # Assuming 4 devices for example
-        configs[-1] = master_config
+        #configs[-1] = master_config
         self.device_num = connected_device_count()
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
 
@@ -34,9 +34,10 @@ class ViewerWithCallback:
         for device in self.devices:
             device.start()
             thread = threading.Thread(target=self.capture_and_process, args=(device,))
-            thread.start()
             self.device_threads.append(thread)
 
+        for thread in self.device_threads:
+            thread.start()
         self.input_thread = threading.Thread(target=self.thread_input)
         self.input_thread.start()
 
