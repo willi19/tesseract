@@ -23,6 +23,7 @@ class ViewerWithCallback:
         self.set_config(config_path)
         self.device_num = connected_device_count()
         print(f"Found {self.device_num} connected devices")
+        
         self.devices = [PyK4A(config = self.config, device_id=device_ind) for device_ind in range(self.device_num)]
         for i in range(self.device_num):
             self.devices[i].start()
