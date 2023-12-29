@@ -36,7 +36,7 @@ class ViewerWithCallback:
         for device in self.devices:
             device.start()
             print(f"Starting device {device.serial} {device.sync_jack_status}")
-            thread = threading.Thread(target=self.capture_and_process, args=(device,))
+            thread = threading.Thread(target=self.thread_capture, args=(device,))
             self.device_threads.append(thread)
 
         for thread in self.device_threads:
@@ -55,16 +55,21 @@ class ViewerWithCallback:
                 self.flag_exit = True
             if key == 'start':
                 self.capture_start = True
+                print("Start capturing")
+            if key == 'stop':
+                self.capture_start = False
 
     def thread_capture(self, device):
         os.makedirs(f'sync/{device.serial}', exist_ok=True)
         while not self.flag_exit:
             capture = device.get_capture()
+            serial = device.serial
             if self.capture_start:
-                self.capture_queue.put((device.serial, capture))
+                print("capture device serial: ", serial)
+                self.capture_queue.put((serial, capture))
     
     def thread_process(self):
-        while not self.flag_exit:
+        while not self.flag_exit or not self.capture_queue.empty():
             if not self.capture_queue.empty():
                 serial, capture = self.capture_queue.get()
                 if capture.color is not None:
