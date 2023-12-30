@@ -22,12 +22,13 @@ class ExtrinsicCalibrater:
     
     def __init__(self, name):
         self.flag_exit = False
+        subordinate_config_path = 'config/pyk4a_subordinate.json'
         subordinate_config = self.set_config('config/pyk4a_subordinate.json')
         master_config = self.set_config('config/pyk4a_master.json')
-        
+        self.config = subordinate_config         
         self.device_num = connected_device_count()
         configs = [subordinate_config] * self.device_num  # Assuming 4 devices for example
-        configs[-1] = master_config
+        #configs[-1] = master_config
 
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
         for i in range(self.device_num):
@@ -45,7 +46,7 @@ class ExtrinsicCalibrater:
         self.dirname = os.path.join('data','extrinsic',self.name)
 
         os.makedirs(self.dirname, exist_ok=True)
-        shutil.copyfile(subordinate_config, os.path.join(self.dirname, 'config.json'))
+        shutil.copyfile(subordinate_config_path, os.path.join(self.dirname, 'config.json'))
         
         self.input_thread = threading.Thread(target=self.thread_input)   
         self.input_thread.start()

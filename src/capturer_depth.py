@@ -76,7 +76,11 @@ class ViewerWithCallback:
                     img = convert_to_bgra_if_required(self.config.color_format, capture.color)
                     # Process and save the image
                     cv2.imwrite(f'sync/{serial}/{capture.color_timestamp_usec // 10 ** 3}.jpg', img)
-
+                if capture.transformed_depth is not None:
+                    depth = capture.transformed_depth
+                    # Process and save the depth
+                    np.save(f'sync/{serial}/{capture.depth_timestamp_usec // 10 ** 3}.npy', depth)
+                    
     def close(self):
         for device in self.devices:
             device.stop()
