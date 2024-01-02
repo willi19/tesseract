@@ -26,7 +26,10 @@ class ViewerWithCallback:
         self.config = self.set_config('config/pyk4a.json')
 
         configs = [subordinate_config] * 4  # Assuming 4 devices for example
-        #configs[-1] = master_config
+        wire_setting = self.read_config('env/wire.json')
+        if wire_setting['is_master']:
+            configs[-1] = master_config
+            
         self.device_num = connected_device_count()
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
         self.capture_start = False

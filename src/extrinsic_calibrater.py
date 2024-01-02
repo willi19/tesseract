@@ -15,7 +15,7 @@ import argparse
 from utils import convert_to_bgra_if_required
 
 class ExtrinsicCalibrater:
-    def set_config(self, config_path):
+    def read_config(self, config_path):
         config_file = open(config_path, 'r')
         data = json.load(config_file)
         return Config(**data)
@@ -23,12 +23,16 @@ class ExtrinsicCalibrater:
     def __init__(self, name):
         self.flag_exit = False
         subordinate_config_path = 'config/pyk4a_subordinate.json'
-        subordinate_config = self.set_config('config/pyk4a_subordinate.json')
-        master_config = self.set_config('config/pyk4a_master.json')
+        subordinate_config = self.read_config('config/pyk4a_subordinate.json')
+        master_config = self.read_config('config/pyk4a_master.json')
+        
+        
         self.config = subordinate_config         
         self.device_num = connected_device_count()
         configs = [subordinate_config] * self.device_num  # Assuming 4 devices for example
-        #configs[-1] = master_config
+        wire_setting = self.read_config('env/wire.json')
+        if wire_setting['is_master']:
+            configs[-1] = master_config
 
         self.devices = [PyK4A(config=configs[device_ind], device_id=device_ind) for device_ind in range(self.device_num)]
         for i in range(self.device_num):
