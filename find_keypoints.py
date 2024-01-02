@@ -5,13 +5,15 @@ import shutil
 
 def find_keypoints_scene(source_dir, dest_dir, debug=False):
     img_list = os.listdir(source_dir)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     for img_name in img_list:
         img = cv2.imread(os.path.join(source_dir, img_name))
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         ret, corners = cv2.findChessboardCorners(gray, (7, 10), None)
-        print(source_dir)
+
         if ret == True:
-            np.save(os.path.join(dest_dir, img_name[:-4]), corners)
+            corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
+            np.save(os.path.join(dest_dir, img_name[:-4]), corners2)
             corners = corners[:,0,:]
             if debug:
                 for i, pt in enumerate(corners):
