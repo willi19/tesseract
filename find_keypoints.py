@@ -38,4 +38,4 @@ def find_checkpoint_root(root, debug=True):
     return
 
 if __name__ == "__main__":
-    find_checkpoint_root('data', debug=True)
+    find_checkpoint_root('data', debug=False)
