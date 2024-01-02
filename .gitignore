@@ -1,8 +1,9 @@
 data/*
 *.jpg
 *.png
-data_share/*
+shared_data/*
 *.pyc
 */*.pyc
 */*/*.pyc
 src/__pycache__/*
+*.npy
