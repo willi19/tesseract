@@ -30,7 +30,7 @@ def find_checkpoint_root(root, debug=True):
         scene_list = os.listdir(os.path.join(root, 'extrinsic', fname))
         
         for scene_name in scene_list:
-            if not os.path.exists(os.path.join(root, 'checkpoint', fname, scene_name)):
+            if not os.path.isdir(os.path.join(root, 'checkpoint', fname, scene_name)):
                 continue
             os.makedirs(os.path.join(root, 'checkpoint', fname, scene_name), exist_ok=True)
 
