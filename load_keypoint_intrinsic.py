@@ -58,7 +58,6 @@ if __name__ == "__main__":
         p1 = param[13]
         
         print(cam_name, "--------------------")
-        print(fx, fy, cx, cy, k1, k2, k3, k4, k5, k6, p1, p2)
         
         #ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), None, None, flags = cv2.CALIB_RATIONAL_MODEL)
         #print(mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
@@ -67,7 +66,7 @@ if __name__ == "__main__":
         dist = np.array([[k1, k2, p1, p2, k3, k4, k5, k6]])
 
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), None, None, flags = cv2.CALIB_RATIONAL_MODEL)
-        print(ret, mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
+        print("keypoint : ", ret)
 
         np.save(os.path.join('intrinsic', cam_name, 'mtx'), mtx)
         np.save(os.path.join('intrinsic', cam_name, 'dist'), dist)
@@ -75,14 +74,8 @@ if __name__ == "__main__":
         cam_mtx = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
         dist = np.array([[k1, k2, p1, p2, k3, k4, k5, k6]])
 
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), cam_mtx, dist, flags = cv2.CALIB_RATIONAL_MODEL+cv2.CALIB_USE_INTRINSIC_GUESS)
-        print(ret, mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
-        
-        cam_mtx = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
-        dist = np.array([[k1, k2, p1, p2, k3, k4, k5, k6]])
         flags = cv2.CALIB_RATIONAL_MODEL | cv2.CALIB_FIX_K1 | cv2.CALIB_FIX_K2 | cv2.CALIB_FIX_K3 | cv2.CALIB_FIX_K4 | cv2.CALIB_FIX_K5 | cv2.CALIB_FIX_K6 | cv2.CALIB_FIX_FOCAL_LENGTH | cv2.CALIB_FIX_PRINCIPAL_POINT | cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_TANGENT_DIST
-        print(flags)
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), cam_mtx, dist, flags = flags)
-        print(ret, mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
-
+        print("device : ", ret)
+        
         
