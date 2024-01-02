@@ -10,6 +10,7 @@ def copy_directory_with_ignore_existing(source_path, destination_path):
     :param destination_path: Path to the destination directory.
     """
     for item in os.listdir(source_path):
+        print(item)
         s = os.path.join(source_path, item)
         d = os.path.join(destination_path, item)
         if os.path.isdir(s):
@@ -24,6 +25,4 @@ def copy_directory_with_ignore_existing(source_path, destination_path):
 # Example usage
 source_directory = "data"
 destination_directory = "shared_data"
-
-# Uncomment the line below to actually copy the directory
-# copy_directory_with_ignore_existing(source_directory, destination_directory)
+copy_directory_with_ignore_existing(source_directory, destination_directory)
