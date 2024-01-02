@@ -39,6 +39,7 @@ if __name__ == "__main__":
         for camparam in data['CalibrationInformation']['Cameras']:
             if camparam['Purpose'] == 'CALIBRATION_CameraPurposePhotoVideo':
                 param = camparam['Intrinsics']['ModelParameters']
+        os.makedirs(os.path.join('intrinsic', cam_name), exist_ok=True)
 
         x = 4096
         y = 3072
@@ -68,6 +69,9 @@ if __name__ == "__main__":
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), None, None, flags = cv2.CALIB_RATIONAL_MODEL)
         print(ret, mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
 
+        np.save(os.path.join('intrinsic', cam_name, 'mtx'), mtx)
+        np.save(os.path.join('intrinsic', cam_name, 'dist'), dist)
+
         cam_mtx = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
         dist = np.array([[k1, k2, p1, p2, k3, k4, k5, k6]])
 
@@ -80,3 +84,5 @@ if __name__ == "__main__":
         print(flags)
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), cam_mtx, dist, flags = flags)
         print(ret, mtx[0][0], mtx[1][1], mtx[0][2], mtx[1][2], dist[0][0], dist[0][1], dist[0][4], dist[0][5], dist[0][6], dist[0][7], dist[0][2], dist[0][3])
+
+        
