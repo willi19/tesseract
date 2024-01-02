@@ -25,12 +25,12 @@ def find_keypoints_scene(source_dir, dest_dir, debug=False):
 def find_checkpoint_root(root, debug=True):
     os.makedirs(os.path.join(root, 'checkpoint'), exist_ok=True)
     file_list = os.listdir(os.path.join(root, 'extrinsic'))
-    
+    print(file_list)
     for fname in file_list:
         scene_list = os.listdir(os.path.join(root, 'extrinsic', fname))
         
         for scene_name in scene_list:
-            if not os.path.isdir(os.path.join(root, 'checkpoint', fname, scene_name)):
+            if not os.path.isdir(os.path.join(root, 'extrinsic', fname, scene_name)):
                 continue
             os.makedirs(os.path.join(root, 'checkpoint', fname, scene_name), exist_ok=True)
 
