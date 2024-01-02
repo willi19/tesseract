@@ -33,9 +33,9 @@ def load_checkpoint(root, debug=True):
 
 if __name__ == "__main__":
     keypoint_list, objpoint_list = load_checkpoint('data', debug=False)
-    os.makedirs('intrinsic', exist_ok=True)
+    os.makedirs('data/intrinsic', exist_ok=True)
     for cam_name, kypt in keypoint_list.items():
-        data = load_json(os.path.join('data', 'intrinsic_kinect', '0102214559','json',cam_name + '.json'))
+        data = load_json(os.path.join('data', 'intrinsic_kinect', '0103012556','json',cam_name + '.json'))
         for camparam in data['CalibrationInformation']['Cameras']:
             if camparam['Purpose'] == 'CALIBRATION_CameraPurposePhotoVideo':
                 param = camparam['Intrinsics']['ModelParameters']
@@ -68,8 +68,8 @@ if __name__ == "__main__":
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoint_list[cam_name], kypt, (4096, 3072), None, None, flags = cv2.CALIB_RATIONAL_MODEL)
         print("keypoint : ", ret)
 
-        np.save(os.path.join('intrinsic', cam_name, 'mtx'), mtx)
-        np.save(os.path.join('intrinsic', cam_name, 'dist'), dist)
+        np.save(os.path.join('data/intrinsic', cam_name, 'mtx'), mtx)
+        np.save(os.path.join('data/intrinsic', cam_name, 'dist'), dist)
 
         cam_mtx = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
         dist = np.array([[k1, k2, p1, p2, k3, k4, k5, k6]])
