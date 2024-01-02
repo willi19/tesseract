@@ -22,7 +22,7 @@ def find_keypoints_scene(source_dir, dest_dir, debug=False):
                 cv2.waitKey(0)
     return
 
-def find_checkpoint_root(root, debug=False):
+def find_checkpoint_root(root, debug=True):
     os.makedirs(os.path.join(root, 'checkpoint'), exist_ok=True)
     file_list = os.listdir(os.path.join(root, 'extrinsic'))
     
