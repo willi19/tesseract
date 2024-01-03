@@ -35,7 +35,7 @@ if __name__ == "__main__":
     keypoint_list, objpoint_list = load_checkpoint('data', debug=False)
     os.makedirs('data/intrinsic', exist_ok=True)
     for cam_name, kypt in keypoint_list.items():
-        data = load_json(os.path.join('data', 'intrinsic_kinect', '0102214141','json',cam_name + '.json'))
+        data = load_json(os.path.join('data', 'intrinsic_kinect', '0103011524','json',cam_name + '.json'))
         for camparam in data['CalibrationInformation']['Cameras']:
             if camparam['Purpose'] == 'CALIBRATION_CameraPurposePhotoVideo':
                 param = camparam['Intrinsics']['ModelParameters']
