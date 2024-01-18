@@ -20,6 +20,11 @@ class ExtrinsicCalibrater:
         data = json.load(config_file)
         return Config(**data)
     
+    def read_json(self, json_path):
+        json_file = open(json_path, 'r')
+        data = json.load(json_file)
+        return data
+    
     def __init__(self, name):
         self.flag_exit = False
         subordinate_config_path = 'config/pyk4a_subordinate.json'
@@ -30,7 +35,7 @@ class ExtrinsicCalibrater:
         self.config = subordinate_config         
         self.device_num = connected_device_count()
         configs = [subordinate_config] * self.device_num  # Assuming 4 devices for example
-        wire_setting = self.read_config('env/wire.json')
+        wire_setting = self.read_json('env/wire.json')
         if wire_setting['is_master']:
             configs[-1] = master_config
 
