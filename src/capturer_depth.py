@@ -16,7 +16,12 @@ class ViewerWithCallback:
         with open(config_path, 'r') as config_file:
             data = json.load(config_file)
         return Config(**data)
-
+    
+    def read_config(self, config_path):
+        with open(config_path, 'r') as config_file:
+            data = json.load(config_file)
+        return data
+    
     def __init__(self):
         self.flag_exit = False
 
