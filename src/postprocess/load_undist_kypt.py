@@ -69,37 +69,54 @@ def find_keypoints_undistort_scene(source_dir, dest_dir, intrinsic_dict, debug=F
                 cv2.waitKey(0)
     return
 
-def find_checkpoint_root(root, debug=True):
-    os.makedirs(os.path.join(root, 'checkpoint_undistort'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'checkpoint_kinect_undistort'), exist_ok=True)
-
-    file_list = os.listdir(os.path.join(root, 'extrinsic'))
-    
-    cam_list = os.listdir(os.path.join(root, "intrinsic"))
-    intrinsic_kinect = {}
+def find_checkpoint_root(root, is_kinect, debug=True):
     intrinsic = {}
-    for cam_name in cam_list:
-        intrinsic[cam_name] = load_intrinsic(os.path.join(root, "intrinsic", cam_name))
-        intrinsic_kinect[cam_name] = load_kinect_intrinsic(os.path.join(root, "intrinsic_kinect", "json", cam_name+".json"))
+    save_path = None
+    cam_list = []
 
-    for fname in file_list:
-        scene_list = os.listdir(os.path.join(root, 'extrinsic', fname))
+    if is_kinect:
+        save_path = os.path.join(root, 'kinect_kypt')
+        intrinsic_json_path = os.path.join(root, 'intrinsic_kinect','json')
+        for json_name in os.listdir(intrinsic_json_path):
+            cam_name = json_name.split('.')[0]
+            cam_list.append(cam_name)
+            intrinsic[cam_name] = load_kinect_intrinsic(os.path.join(intrinsic_json_path, json_name))
+    
+    else:
+        save_path = os.path.join(root, 'opencv_kypt')
+        intrinsic_path = os.path.join(root, 'intrinsic')
+        for cam_name in os.listdir(intrinsic_path):
+            cam_list.append(cam_name)
+            intrinsic[cam_name] = load_intrinsic(os.path.join(intrinsic_path, cam_name))            
+    
+    os.makedirs(save_path, exist_ok=True)
         
-        for scene_name in scene_list:
-            if not os.path.isdir(os.path.join(root, 'extrinsic', fname, scene_name)):
-                continue
-            
-            
-            os.makedirs(os.path.join(root, 'checkpoint_undistort', fname, scene_name), exist_ok=True)
-            source_dir = os.path.join(root, 'extrinsic', fname, scene_name)
-            dest_dir = os.path.join(root, 'checkpoint_undistort', fname, scene_name)
-            find_keypoints_undistort_scene(source_dir, dest_dir, intrinsic)
-            
-            os.makedirs(os.path.join(root, 'checkpoint_kinect_undistort', fname, scene_name), exist_ok=True)
-            source_dir = os.path.join(root, 'extrinsic', fname, scene_name)
-            dest_dir = os.path.join(root, 'checkpoint_kinect_undistort', fname, scene_name)
-            find_keypoints_undistort_scene(source_dir, dest_dir, intrinsic_kinect)
+    scene_list = os.listdir(os.path.join(root, 'scene'))
+    
+    for i, scene_name in enumerate(scene_list):
+        dest_dir = os.path.join(save_path, scene_name)
+        source_dir = os.path.join(root, 'scene', scene_name)
+        
+        os.makedirs(dest_dir, exist_ok=True)
+        find_keypoints_undistort_scene(source_dir, dest_dir, intrinsic)
+        
+        print(str(i / len(scene_list) * 100)+"%"+ " done")
     return
 
 if __name__ == "__main__":
-    find_checkpoint_root('data', debug=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", required = True, help='data/calibrate/root')
+    parser.add_argument("--type", required = True, help='all-kinect-opencv')
+    
+    args = parser.parse_args()
+    
+    root_path = f'data/calibrate/{args.root}'
+    
+    if args.type not in ['all', 'kinect', 'opencv']:
+        print("type should be one of [all ,kinect, opencv]")
+        return 
+    
+    if args.type in ['all', 'kinect']:
+        save_checkpoint_root(root_path, is_kinect = True, debug=False)
+    if args.type in ['all', 'kinect']:
+        save_checkpoint_root(root_path, is_kinect = False, debug=False)
