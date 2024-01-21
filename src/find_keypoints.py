@@ -3,7 +3,7 @@ import os
 import numpy as np
 import shutil
 
-def find_keypoints_scene(source_dir, dest_dir, debug=False):
+def find_keypoints_scene(source_dir, dest_dir, debug=False): #Save 
     img_list = os.listdir(source_dir)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     for img_name in img_list:
