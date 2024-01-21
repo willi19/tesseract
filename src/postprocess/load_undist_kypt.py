@@ -118,5 +118,5 @@ if __name__ == "__main__":
     
     if args.type in ['all', 'kinect']:
         save_checkpoint_root(root_path, is_kinect = True, debug=False)
-    if args.type in ['all', 'kinect']:
+    if args.type in ['all', 'opencv']:
         save_checkpoint_root(root_path, is_kinect = False, debug=False)
