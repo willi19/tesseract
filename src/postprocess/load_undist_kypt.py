@@ -3,6 +3,7 @@ import os
 import numpy as np
 import shutil
 import json
+import argparse
 
 def load_intrinsic(path):
     mtx = np.load(os.path.join(path, "mtx.npy"))
@@ -114,7 +115,6 @@ if __name__ == "__main__":
     
     if args.type not in ['all', 'kinect', 'opencv']:
         print("type should be one of [all ,kinect, opencv]")
-        return 
     
     if args.type in ['all', 'kinect']:
         save_checkpoint_root(root_path, is_kinect = True, debug=False)
