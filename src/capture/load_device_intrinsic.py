@@ -4,7 +4,7 @@ import json
 import numpy as np
 import cv2
 import os
-from src import utils
+from src.capture import utils
 import time
 import shutil
 

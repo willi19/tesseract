@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import json
 from pyk4a import PyK4A, Config, connected_device_count
-from utils import convert_to_bgra_if_required
+from src.capture.utils import convert_to_bgra_if_required
 import threading
 import asyncio
 import shutil
@@ -16,7 +16,12 @@ class ViewerWithCallback:
         with open(config_path, 'r') as config_file:
             data = json.load(config_file)
         return Config(**data)
-
+    
+    def read_config(self, config_path):
+        with open(config_path, 'r') as config_file:
+            data = json.load(config_file)
+        return data
+    
     def __init__(self):
         self.flag_exit = False
 
@@ -79,7 +84,11 @@ class ViewerWithCallback:
                     img = convert_to_bgra_if_required(self.config.color_format, capture.color)
                     # Process and save the image
                     cv2.imwrite(f'sync/{serial}/{capture.color_timestamp_usec // 10 ** 3}.jpg', img)
-
+                if capture.transformed_depth is not None:
+                    depth = capture.transformed_depth
+                    # Process and save the depth
+                    np.save(f'sync/{serial}/{capture.depth_timestamp_usec // 10 ** 3}.npy', depth)
+                    
     def close(self):
         for device in self.devices:
             device.stop()

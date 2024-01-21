@@ -12,7 +12,7 @@ import shutil
 from aiohttp import FormData
 import aiohttp
 import argparse
-from utils import convert_to_bgra_if_required
+from src.capture.utils import convert_to_bgra_if_required
 
 class ExtrinsicCalibrater:
     def read_config(self, config_path):

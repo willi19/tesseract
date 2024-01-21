@@ -10,7 +10,7 @@ import cv2
 import json
 import shutil
 from pyk4a import PyK4A, connected_device_count, Config
-from utils import convert_to_bgra_if_required
+from src.capture.utils import convert_to_bgra_if_required
 
 class IntrinsicCalibrater:
     def set_config(self, config_path):

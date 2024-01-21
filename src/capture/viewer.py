@@ -9,7 +9,7 @@ import time
 import cv2
 import json
 from pyk4a import PyK4A, Config, connected_device_count
-from utils import convert_to_bgra_if_required
+from src.capture.utils import convert_to_bgra_if_required
 
 class ViewerWithCallback:
     def set_config(self, config_path):
