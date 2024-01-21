@@ -15,7 +15,7 @@ def merge_into_square_grid(img_dir):
     
     num_col = grid_size
     num_row = (len(images) -1) // num_col + 1
-     
+
     while len(images) < num_col * num_row:
         # Add blank images if necessary to complete the square
         images.append(np.zeros_like(images[0]))
@@ -35,9 +35,11 @@ def display_images():
         img = merge_into_square_grid('current_scene')
         if img is not None:
             cv2.imshow('Image', img)
+            cv2.imwrite('merged_image.jpg', img)
             cv2.waitKey(1)  # Display for a short duration
-            time.sleep(5)  # Check the folder every 5 seconds
+            time.sleep(1)  # Check the folder every 5 seconds
             
 if __name__ == '__main__':
     while True:
         display_images()
+        
