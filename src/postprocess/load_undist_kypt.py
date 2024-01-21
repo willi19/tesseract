@@ -70,7 +70,7 @@ def find_keypoints_undistort_scene(source_dir, dest_dir, intrinsic_dict, debug=F
                 cv2.waitKey(0)
     return
 
-def find_checkpoint_root(root, is_kinect, debug=True):
+def save_checkpoint_root(root, is_kinect, debug=True):
     intrinsic = {}
     save_path = None
     cam_list = []
