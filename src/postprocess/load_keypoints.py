@@ -2,6 +2,7 @@ import cv2
 import os
 import numpy as np
 import shutil
+import argparse
 
 def find_keypoints_scene(source_dir, dest_dir, debug=False): #Save 
     img_list = os.listdir(source_dir)
@@ -26,20 +27,21 @@ def find_keypoints_scene(source_dir, dest_dir, debug=False): #Save
 
 def find_checkpoint_root(root, debug=True):
     os.makedirs(os.path.join(root, 'checkpoint'), exist_ok=True)
-    file_list = os.listdir(os.path.join(root, 'extrinsic'))
-    print(file_list)
-    for fname in file_list:
-        scene_list = os.listdir(os.path.join(root, 'extrinsic', fname))
-        
-        for scene_name in scene_list:
-            if not os.path.isdir(os.path.join(root, 'extrinsic', fname, scene_name)):
-                continue
-            os.makedirs(os.path.join(root, 'checkpoint', fname, scene_name), exist_ok=True)
+    scene_list = os.listdir(os.path.join(root, 'scene'))
+    for i, scene_name in enumerate(scene_list):
+        if not os.path.isdir(os.path.join(root, 'scene', scene_name)):
+            continue
+        os.makedirs(os.path.join(root, 'checkpoint', scene_name), exist_ok=True)
 
-            source_dir = os.path.join(root, 'extrinsic', fname, scene_name)
-            dest_dir = os.path.join(root, 'checkpoint', fname, scene_name)
-            find_keypoints_scene(source_dir, dest_dir, debug=debug)
+        source_dir = os.path.join(root, 'scene', scene_name)
+        dest_dir = os.path.join(root, 'checkpoint', scene_name)
+        find_keypoints_scene(source_dir, dest_dir, debug=debug)
+        print(str((i / len(scene_list)) * 100) + "%" + "done")
+    print("done")
     return
 
 if __name__ == "__main__":
-    find_checkpoint_root('data', debug=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", required = True, help='data/calibrate/root')
+    args = parser.parse_args()
+    find_checkpoint_root(f"data/calibrate/{args.root}", debug=False)
