@@ -1,5 +1,6 @@
 import os
 import shutil
+import argparse
 
 def copy_directory_with_ignore_existing(source_path, destination_path):
     """
@@ -21,8 +22,13 @@ def copy_directory_with_ignore_existing(source_path, destination_path):
         else:
             if not os.path.exists(d):
                 shutil.copy2(s, d)
+    print("upload done")
 
-# Example usage
-source_directory = "data"
-destination_directory = "shared_data"
-copy_directory_with_ignore_existing(source_directory, destination_directory)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", required = True, help='root')
+    args = parser.parse_args()
+    
+    source = os.path.join("data", args.root)
+    dest = os.path.join("shared_data", args.root)
+    copy_directory_with_ignore_existing(source, dest)
