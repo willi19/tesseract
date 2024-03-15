@@ -69,11 +69,11 @@ class ViewerWithCallback:
 
     def thread_capture(self, device):
         os.makedirs(f'sync/{device.serial}', exist_ok=True)
+        serial = device.serial
+
         while not self.flag_exit:
             capture = device.get_capture()
-            serial = device.serial
             if self.capture_start:
-                print("capture device serial: ", serial)
                 self.capture_queue.put((serial, capture))
     
     def thread_process(self):
